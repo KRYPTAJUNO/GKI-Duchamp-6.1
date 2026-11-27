@@ -62,3 +62,13 @@ Before any load test, capture the current USB descriptors and loaded driver/modu
 ## Current gate
 
 This branch currently contains documentation only. The pinned external source has not been compiled against GKID 6.1.177, its firmware has not been staged, and no module has been loaded or flashed. Do not enable the in-tree `CONFIG_RTL8XXXU` option or publish a flashable ZIP on the basis of this external-module candidate alone.
+
+
+## Builder-script safety and source-of-truth note
+
+The currently inspected `KRYPTAJUNO/GKID-Kernels` `dev` branch's `build.sh` has two important behaviors:
+
+- It sets `WORKDIR` to the current directory, then clones the 6.1 source from the hard-coded upstream repository/branch selected by `NH` (`ahmed-alnassif/GKI-Duchamp-6.1:GKID-NH`). It does **not** automatically build from the user's fork branch `rtl8188gu-backport-6.1-nh`. Any future integrated-source build must explicitly change the source selection in a separate, reviewed builder branch or use a controlled manual checkout.
+- Later in the script it performs broad host cleanup (including `apt-get autoremove`, deleting many system directories and `/tmp/*`, pruning Docker, removing swap files, and creating a 32 GB swap file). Do **not** run this script inside the user's persistent Ubuntu/NetHunter chroot or on a machine containing user data. It is designed around an ephemeral CI runner and can be destructive outside that environment.
+
+The external-module-only compile should not invoke the full `build.sh`. It requires an already prepared, matching GKID output tree. The GitHub repository connector cannot access the user's local `ksrc`/`out` directories or compile against them, so the actual compiler/modpost stage remains pending until that build tree is made available in a controlled environment.
